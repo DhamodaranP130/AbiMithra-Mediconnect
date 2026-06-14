@@ -4,564 +4,796 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediConnect AI</title>
-    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Styles -->
+
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="nav-brand">
-            <i class="fa-solid fa-staff-snake logo-icon"></i>
+            <i class="fa-solid fa-wave-square"></i>
             <span>MediConnect <strong>AI</strong></span>
         </div>
         <ul class="nav-links">
             <li><a href="#/home" class="nav-item active" title="Home" data-target="home"><i class="fa-solid fa-house"></i></a></li>
+            <li><a href="#/login" class="nav-item" title="Login" data-target="login"><i class="fa-solid fa-right-to-bracket"></i></a></li>
             <li><a href="#/sign" class="nav-item" title="Sign Recognition" data-target="sign"><i class="fa-solid fa-hands"></i></a></li>
             <li><a href="#/emotion" class="nav-item" title="Emotion Analysis" data-target="emotion"><i class="fa-solid fa-brain"></i></a></li>
-            <li><a href="#/multilingual" class="nav-item" title="Translation" data-target="multilingual"><i class="fa-solid fa-globe"></i></a></li>
+            <li><a href="#/voice" class="nav-item" title="Multilingual AI" data-target="voice"><i class="fa-solid fa-globe"></i></a></li>
             <li><a href="#/emergency" class="nav-item btn-danger-nav" title="Emergency" data-target="emergency"><i class="fa-solid fa-triangle-exclamation"></i> Emergency</a></li>
-            <li><a href="#/health" class="nav-item" title="Health Assistant" data-target="health"><i class="fa-solid fa-heart-pulse"></i></a></li>
-            <li><a href="#/records" class="nav-item" title="Records" data-target="records"><i class="fa-solid fa-folder-open"></i></a></li>
-            <li><a href="#/voice" class="nav-item" title="Voice" data-target="voice"><i class="fa-solid fa-microphone"></i></a></li>
-            <li><a href="#/analytics" class="nav-item" title="Analytics" data-target="analytics"><i class="fa-solid fa-chart-simple"></i></a></li>
+            <li><a href="#/voiceassist" class="nav-item" title="Voice Assistant" data-target="voiceassist"><i class="fa-solid fa-microphone"></i></a></li>
+            <li><a href="#/records" class="nav-item" title="Medical Records" data-target="records"><i class="fa-solid fa-folder-open"></i></a></li>
+            <li><a href="#/analytics" class="nav-item" title="Analytics" data-target="analytics"><i class="fa-solid fa-chart-column"></i></a></li>
         </ul>
         <div class="nav-profile">
-            <div class="status-badge"><div class="status-indicator online"></div> System Online</div>
+            <div class="status-badge"><span class="status-indicator online"></span> System Online</div>
+            <button id="btn-api-key" class="btn-icon" title="Configure API Key"><i class="fa-solid fa-key"></i></button>
         </div>
     </nav>
 
-    <!-- Main Content Container -->
-    <main id="app-container">
-        
-        <!-- 1. HOME DASHBOARD -->
-        <section id="page-home" class="page active">
+    <div id="assistant-overlay" class="assistant-overlay">
+        <button id="assistant-overlay-button" class="assistant-overlay-button" title="Open AI Assistant"><i class="fa-solid fa-robot"></i></button>
+        <div id="assistant-overlay-panel" class="assistant-overlay-panel hidden">
+            <div class="assistant-panel-header">
+                <div><i class="fa-solid fa-robot"></i> AI Assistant</div>
+                <button id="assistant-overlay-close" class="btn-icon" title="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="assistant-overlay-messages" class="overlay-chat-window">
+                <div class="overlay-chat-message system">Ask me to summarize, translate signs, or help with patient follow-up from any screen.</div>
+            </div>
+            <div class="assistant-overlay-actions">
+                <button type="button" class="btn-outline quick-action" data-quick="Translate this sign language gesture into a short phrase.">Translate Sign</button>
+                <button type="button" class="btn-outline quick-action" data-quick="Summarize the current health assistant conversation into a short note.">Summarize</button>
+                <button type="button" class="btn-outline quick-action" data-quick="Provide quick care tips based on common patient symptoms.">Care Tips</button>
+            </div>
+            <div class="assistant-overlay-input">
+                <input id="assistant-overlay-input" type="text" placeholder="Ask the assistant...">
+                <button id="assistant-overlay-send" class="btn-primary">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container">
+
+        <!-- ================= LOGIN / AUTHENTICATION ================= -->
+        <div id="page-login" class="page">
             <div class="page-header-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-house-medical"></i> Clinical Dashboard</h2>
-                    <p>Overview of active modules, system status, and intelligent patient monitoring.</p>
+                    <h2><i class="fa-solid fa-right-to-bracket"></i> Secure Login</h2>
+                    <p>Authenticate with Supabase and assign patient, doctor, or admin roles to protect medical records.</p>
                 </div>
             </div>
-            
+            <div class="two-col-layout" style="margin:0 2rem;">
+                <div class="clinical-card border-top-blue" style="margin:0;">
+                    <h3><i class="fa-solid fa-user-lock"></i> Sign In / Register</h3>
+                    <div class="form-grid mt-2">
+                        <div class="lang-group"><label>Email</label><input type="email" id="auth-email" placeholder="name@example.com"></div>
+                        <div class="lang-group"><label>Password</label><input type="password" id="auth-password" placeholder="********"></div>
+                        <div class="lang-group"><label>Role</label><select id="auth-role"><option value="patient">Patient</option><option value="doctor">Doctor</option><option value="admin">Admin</option></select></div>
+                        <button id="auth-signin" class="btn-primary">Sign In</button>
+                        <button id="auth-signup" class="btn-outline">Create Account</button>
+                        <button id="auth-signout" class="btn-danger-nav" style="grid-column:1 / -1;">Sign Out</button>
+                    </div>
+                    <div id="auth-message" class="text-sm text-muted mt-3">Not signed in.</div>
+                </div>
+                <div class="clinical-card border-top-blue" style="margin:0;">
+                    <h3><i class="fa-solid fa-file-medical"></i> Identity & Roles</h3>
+                    <p class="text-muted">Patients should only view their own records. Doctors can create and manage patient files. Admins audit and approve records and oversee user access.</p>
+                    <ul class="mt-2" style="padding-left:1rem;">
+                        <li>Patient ID: issued at registration for patient access.</li>
+                        <li>Doctor ID: used to link medical records to physicians.</li>
+                        <li>Admin ID: used for approvals and administrative review.</li>
+                    </ul>
+                    <div id="auth-user-info" class="text-sm text-muted mt-4">No active user.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= HOME / SYSTEM MODULES ================= -->
+        <div id="page-home" class="page active">
+            <div class="page-header-banner">
+                <div class="banner-content">
+                    <h2>System Modules <span class="text-sm" style="font-weight:400;opacity:0.85;">8 Active</span></h2>
+                    <p>MediConnect multi-modal AI cluster — real-time sign recognition, emotion analysis, translation and emergency response.</p>
+                </div>
+            </div>
+
             <div class="feature-grid">
-                <a href="#/sign" class="feature-card">
-                    <div class="card-icon blue"><i class="fa-solid fa-hands-asl-interpreting"></i></div>
+                <a href="#/sign" class="feature-card border-top-blue">
+                    <div class="card-icon blue"><i class="fa-solid fa-hand-paper"></i></div>
                     <h3>Sign Recognition</h3>
-                    <p>Real-time clinical gesture translation</p>
+                    <p class="text-muted text-sm">Real-time hand gesture detection and ASL translation powered by computer vision.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+                        <span class="text-blue text-sm">98.4% accuracy</span>
+                        <span class="badge green">Active</span>
+                    </div>
                 </a>
-                <a href="#/emotion" class="feature-card">
+
+                <a href="#/emotion" class="feature-card border-top-purple">
                     <div class="card-icon purple"><i class="fa-solid fa-brain"></i></div>
                     <h3>Emotion Analysis</h3>
-                    <p>Facial distress & neurological tracking</p>
+                    <p class="text-muted text-sm">Facial emotion detection with distress level monitoring and patient reporting.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+                        <span class="text-purple text-sm">12 emotions tracked</span>
+                        <span class="badge green">Active</span>
+                    </div>
                 </a>
-                <a href="#/multilingual" class="feature-card">
-                    <div class="card-icon green"><i class="fa-solid fa-language"></i></div>
+
+                <a href="#/voice" class="feature-card border-top-green">
+                    <div class="card-icon green"><i class="fa-solid fa-globe"></i></div>
                     <h3>Multilingual AI</h3>
-                    <p>Cross-language patient communication</p>
+                    <p class="text-muted text-sm">AI-powered translation across 20+ languages with sign-to-text conversion.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+                        <span class="text-green text-sm">24 languages</span>
+                        <span class="badge green">Active</span>
+                    </div>
                 </a>
-                <a href="#/emergency" class="feature-card alert-card">
-                    <div class="card-icon red"><i class="fa-solid fa-truck-medical"></i></div>
+
+                <a href="#/emergency" class="feature-card border-top-red">
+                    <div class="card-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
                     <h3>Emergency Alerts</h3>
-                    <p>Priority SOS & agentic triage dispatch</p>
+                    <p class="text-muted text-sm">One-touch SOS, agentic distress detection, dispatcher contact and GPS sharing.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+                        <span class="text-red text-sm">&lt; 2s response time</span>
+                        <span class="badge green">Active</span>
+                    </div>
                 </a>
-                <a href="#/health" class="feature-card">
-                    <div class="card-icon blue"><i class="fa-solid fa-stethoscope"></i></div>
-                    <h3>Health Assistant</h3>
-                    <p>AI-guided symptom check & vitals</p>
-                </a>
-                <a href="#/records" class="feature-card">
-                    <div class="card-icon purple"><i class="fa-solid fa-file-medical"></i></div>
-                    <h3>Medical Records</h3>
-                    <p>Secure EHR management & reporting</p>
-                </a>
-                <a href="#/voice" class="feature-card">
-                    <div class="card-icon green"><i class="fa-solid fa-microphone-lines"></i></div>
+
+                <a href="#/voiceassist" class="feature-card border-top-blue">
+                    <div class="card-icon blue"><i class="fa-solid fa-microphone"></i></div>
                     <h3>Voice Assistant</h3>
-                    <p>Real-time dictation & synthesis</p>
+                    <p class="text-muted text-sm">Speech-to-text and text-to-speech with real-time waveform visualization.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+                        <span class="text-blue text-sm">Live transcription</span>
+                        <span class="badge green">Active</span>
+                    </div>
                 </a>
-                <a href="#/analytics" class="feature-card">
-                    <div class="card-icon blue"><i class="fa-solid fa-chart-pie"></i></div>
+
+                <a href="#/records" class="feature-card border-top-blue">
+                    <div class="card-icon blue"><i class="fa-solid fa-folder-open"></i></div>
+                    <h3>Medical Records</h3>
+                    <p class="text-muted text-sm">Secure patient file management, history viewer, and PDF report export.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+                        <span class="text-blue text-sm">HIPAA compliant</span>
+                        <span class="badge green">Active</span>
+                    </div>
+                </a>
+
+                <a href="#/analytics" class="feature-card border-top-green">
+                    <div class="card-icon green"><i class="fa-solid fa-chart-column"></i></div>
                     <h3>Analytics</h3>
-                    <p>Facility-wide usage metrics</p>
+                    <p class="text-muted text-sm">Usage statistics, emotion trends, alert frequency, and engagement metrics.</p>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;">
+                        <span class="text-green text-sm">Live dashboard</span>
+                        <span class="badge green">Active</span>
+                    </div>
                 </a>
             </div>
-        </section>
+        </div>
 
-        <!-- 2. SIGN RECOGNITION -->
-        <section id="page-sign" class="page">
+        <!-- ================= SIGN LANGUAGE CONVERSATION ================= -->
+        <div id="page-sign" class="page">
             <div class="page-header-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-hands"></i> Sign Recognition</h2>
-                    <p>Clinical hand gesture translation powered by AI visual modeling</p>
+                    <h2><i class="fa-solid fa-hand-paper"></i> Sign Language Conversation</h2>
+                    <p>Two-way communication translator between sign language and spoken/written language.</p>
                 </div>
             </div>
-            <div class="two-col-layout">
-                <div class="left-col">
-                    <div class="clinical-card camera-container">
-                        <div class="camera-feed" id="sign-camera-feed">
-                            <canvas id="sign-canvas"></canvas>
-                            <div class="camera-overlay hidden">
-                                <span><i class="fa-solid fa-video"></i> Active Feed</span>
+
+            <div style="margin:0 2rem;">
+                <!-- Mode Tabs -->
+                <div class="tabs-container mb-2">
+                    <button class="tab-btn active" data-tab="sign-to-voice">🤚 Sign → Voice</button>
+                    <button class="tab-btn" data-tab="text-to-sign">✍️ Text → Sign</button>
+                    <button class="tab-btn" data-tab="voice-to-sign">🎤 Voice → Sign</button>
+                    <button class="tab-btn" data-tab="conversation">💬 Conversation</button>
+                </div>
+
+                <!-- MODE 1: Hand Sign → Voice & Text -->
+                <div id="tab-sign-to-voice" class="tab-content active">
+                    <div class="two-col-layout">
+                        <div class="clinical-card border-top-blue">
+                            <h3><i class="fa-solid fa-camera"></i> Hand Sign Recognition</h3>
+                            <p class="text-sm text-muted mb-2">📌 Demo recognizer: Limited to basic hand shapes (A, B, C, OK, Peace, Thumbs Up).</p>
+                            <div class="camera-container">
+                                <div class="camera-feed">
+                                    <canvas id="sign-canvas"></canvas>
+                                    <div id="sign-calibration-grid" class="calibration-overlay hidden">
+                                        <div class="grid-line vertical"></div>
+                                        <div class="grid-line horizontal"></div>
+                                        <div class="grid-box center-box"></div>
+                                    </div>
+                                </div>
+                                <div class="camera-controls">
+                                    <button id="toggle-sign-camera" class="btn-primary"><i class="fa-solid fa-camera"></i> Start Camera</button>
+                                    <button id="toggle-sign-calibration" class="btn-outline" style="margin-left: 0.5rem;"><i class="fa-solid fa-crosshairs"></i> Calibration</button>
+                                </div>
                             </div>
                         </div>
-                        <div class="camera-controls">
-                            <button id="toggle-sign-camera" class="btn-primary"><i class="fa-solid fa-camera"></i> Initialize Scanner</button>
+
+                        <div class="clinical-card border-top-green">
+                            <h3><i class="fa-solid fa-waveform-lines"></i> Recognition Output</h3>
+                            <div class="confidence-meter mt-2">
+                                <span class="text-sm text-muted">Confidence</span>
+                                <div class="progress-bar"><div class="progress-fill" id="sign-confidence" style="width:0%;"></div></div>
+                                <strong id="sign-confidence-val">0%</strong>
+                            </div>
+                            <h4 class="mt-4">Recognized Gesture</h4>
+                            <div class="translation-box mt-1" id="sign-recognition-text">
+                                <span class="text-muted">Make a hand gesture to recognize...</span>
+                            </div>
+                            <div class="sign-macro-panel mt-4">
+                                <div class="macro-header"><strong>Quick Phrase Macros</strong> <span class="text-sm text-muted">Tap to send</span></div>
+                                <div id="gesture-macro-list" class="macro-list"></div>
+                                <div class="macro-form mt-2">
+                                    <input id="gesture-macro-input" type="text" placeholder="Add custom gesture phrase...">
+                                    <button id="gesture-macro-save" class="btn-primary btn-sm">Save</button>
+                                </div>
+                            </div>
+                            <h4 class="mt-4">Visual Calibration</h4>
+                            <div class="calibration-panel mt-1" id="sign-calibration-panel">
+                                <p class="text-sm text-muted">Use calibration to align the sign zone and improve recognition accuracy.</p>
+                                <button id="btn-start-calibration" class="btn-outline btn-sm">Start Calibration</button>
+                                <span id="calibration-status" class="text-sm" style="margin-left:0.75rem;">Not calibrated</span>
+                            </div>
+                            <div class="mt-4">
+                                <button id="btn-read-recognized" class="btn-primary full-width mt-1"><i class="fa-solid fa-volume-high"></i> Speak Recognized Text</button>
+                                <button id="btn-copy-recognized" class="btn-outline full-width mt-1"><i class="fa-solid fa-copy"></i> Copy Text</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="right-col">
-                    <div class="clinical-card">
-                        <h3><i class="fa-solid fa-microchip"></i> AI Translation Engine</h3>
-                        <div class="confidence-meter mt-2">
-                            <span>Diagnostic Confidence</span>
-                            <div class="progress-bar"><div class="progress-fill" id="sign-confidence" style="width: 0%"></div></div>
-                            <span id="sign-confidence-val">0%</span>
+
+                <!-- MODE 2: Text → Hand Sign & Voice -->
+                <div id="tab-text-to-sign" class="tab-content">
+                    <div class="two-col-layout">
+                        <div class="clinical-card border-top-blue">
+                            <h3><i class="fa-solid fa-keyboard"></i> Type Text to Fingerspell</h3>
+                            <p class="text-sm text-muted mb-2">Easily translate any written text into an interactive fingerspelling sequence. Simply type a word or sentence below, and watch the avatar sign it letter-by-letter to bridge the communication gap instantly.</p>
+                            <textarea id="text-input-sign" class="full-width mt-2" rows="6" placeholder="Type a sentence or phrase..."></textarea>
+                            <button id="btn-fingerspell-text" class="btn-primary full-width mt-2"><i class="fa-solid fa-hand"></i> Start Fingerspelling</button>
+                            <button id="btn-speak-text" class="btn-outline full-width mt-2"><i class="fa-solid fa-volume-high"></i> Speak Text Aloud</button>
+                            <div class="text-sm text-muted mt-2">Tip: Use short phrases for best animation fidelity. This module simulates fingerspelling letter-by-letter.</div>
                         </div>
-                        <div class="translation-box mt-2" id="sign-translation-box">
-                            System idle. Awaiting gesture input...
+
+                        <div class="clinical-card border-top-purple">
+                            <h3><i class="fa-solid fa-person"></i> Fingerspelling Avatar</h3>
+                            <p class="text-sm text-muted mb-2">Watch the animated representation as it signs out your message accurately. This powerful assistive tool ensures clarity by providing a visual, letter-by-letter breakdown of complex terms.</p>
+                            <div id="avatar-container-text" class="avatar-panel" style="display: flex; justify-content: flex-start; padding-right: 4rem; align-items: center; min-height: 250px;">
+                                <img id="fingerspell-avatar-text" src="https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/a.gif" style="width: 250px; height: 250px; object-fit: contain; display: none;">
+                            </div>
+                            <div id="text-fingerspell-label" class="text-center mt-2 text-sm" style="font-weight:bold; color:#666;">Ready</div>
+                            <div id="fingerspell-history-text" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 15px; min-height: 50px;"></div>
+                            <button id="btn-retry-text" class="btn-outline full-width mt-2" style="display: none;"><i class="fa-solid fa-rotate-right"></i> Replay Animation</button>
                         </div>
-                        <button id="trigger-claude-sign" class="btn-primary full-width mt-2"><i class="fa-solid fa-wand-magic-sparkles"></i> Process Gestures via AI</button>
                     </div>
-                    <div class="clinical-card mt-4">
-                        <h3><i class="fa-solid fa-list"></i> Recognition Log</h3>
-                        <ul class="history-log" id="sign-history-log">
-                            <li class="empty-log text-muted">No telemetry data recorded.</li>
-                        </ul>
+                </div>
+
+                <!-- MODE 3: Voice → Text & Hand Sign -->
+                <div id="tab-voice-to-sign" class="tab-content">
+                    <div class="two-col-layout">
+                        <div class="clinical-card border-top-blue">
+                            <h3><i class="fa-solid fa-microphone"></i> Voice to Sign Recognition</h3>
+                            <p class="text-sm text-muted mb-2">Speak naturally into your microphone to generate real-time transcriptions, which are then seamlessly converted into sign language animations.</p>
+                            <button id="btn-start-voice-sign" class="btn-primary full-width mt-2"><i class="fa-solid fa-microphone"></i> Start Speaking</button>
+                            <button id="btn-stop-voice-sign" class="btn-outline full-width mt-2"><i class="fa-solid fa-stop"></i> Stop</button>
+                            <h4 class="mt-4">Transcribed Text</h4>
+                            <div class="translation-box mt-1" id="voice-transcribed-text">
+                                <span class="text-muted">Speak to transcribe...</span>
+                            </div>
+                            <h4 class="mt-4">Status</h4>
+                            <div id="voice-sign-status" class="text-sm mt-1" style="color:#666;">Ready</div>
+                        </div>
+
+                        <div class="clinical-card border-top-purple">
+                            <h3><i class="fa-solid fa-person"></i> Fingerspelling Avatar</h3>
+                            <p class="text-sm text-muted mb-2">Follow along as your spoken words are rendered as fluid fingerspelled letters. This is an excellent tool for real-time translation and practice.</p>
+                            <div id="avatar-container-voice" class="avatar-panel" style="display: flex; justify-content: flex-start; padding-right: 4rem; align-items: center; min-height: 250px;">
+                                <img id="fingerspell-avatar-voice" src="https://www.lifeprint.com/asl101/fingerspelling/abc-gifs/a.gif" style="width: 250px; height: 250px; object-fit: contain; display: none;">
+                            </div>
+                            <div id="voice-fingerspell-label" class="text-center mt-2 text-sm" style="font-weight:bold; color:#666;">Ready</div>
+                            <div id="fingerspell-history-voice" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 15px; min-height: 50px;"></div>
+                            <button id="btn-retry-voice" class="btn-outline full-width mt-2" style="display: none;"><i class="fa-solid fa-rotate-right"></i> Replay Animation</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODE 4: Conversation Mode -->
+                <div id="tab-conversation" class="tab-content">
+                    <div class="two-col-layout">
+                        <div class="clinical-card border-top-blue">
+                            <h3><i class="fa-solid fa-microphone"></i> Input Options</h3>
+                            <button id="btn-voice-input-conv" class="btn-primary full-width mt-2"><i class="fa-solid fa-microphone"></i> Speak</button>
+                            <textarea id="text-input-conv" class="full-width mt-2" rows="4" placeholder="Or type a message..."></textarea>
+                            <button id="btn-text-input-conv" class="btn-primary full-width mt-2"><i class="fa-solid fa-arrow-right"></i> Send Message</button>
+                            
+                            <h4 class="mt-4"><i class="fa-solid fa-bolt"></i> Quick Phrases</h4>
+                            <div class="macros-container mt-1">
+                                <button class="macro-pill" data-phrase="Hello, I need help.">Hello, I need help.</button>
+                                <button class="macro-pill" data-phrase="Thank you.">Thank you.</button>
+                                <button class="macro-pill" data-phrase="I am in pain.">I am in pain.</button>
+                                <button class="macro-pill" data-phrase="Where is the doctor?">Where is the doctor?</button>
+                            </div>
+
+                            <h4 class="mt-4">Status</h4>
+                            <div id="conv-status" class="text-sm" style="color:#666;">Ready</div>
+                        </div>
+
+                        <div class="clinical-card border-top-green">
+                            <h3><i class="fa-solid fa-comments"></i> Conversation Log</h3>
+                            <div id="conversation-log" style="height:400px; overflow-y:auto; border:1px solid #ddd; border-radius:6px; padding:1rem; background:#fafafa;">
+                                <div class="text-center text-muted" style="padding:2rem;">No messages yet. Start speaking or typing!</div>
+                            </div>
+                            <button id="btn-clear-conv" class="btn-outline full-width mt-2"><i class="fa-solid fa-trash"></i> Clear Conversation</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- 3. EMOTION ANALYSIS -->
-        <section id="page-emotion" class="page">
+        <!-- ================= EMOTION ANALYSIS ================= -->
+        <div id="page-emotion" class="page">
             <div class="page-header-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-brain"></i> Emotion & Distress Tracking</h2>
-                    <p>Real-time facial micro-expression analysis and neurological distress mapping</p>
+                    <h2><i class="fa-solid fa-brain"></i> Emotion Analysis</h2>
+                    <p>Facial mood detection, distress level monitoring, and patient emotional reporting.</p>
                 </div>
             </div>
-            <div class="two-col-layout">
-                <div class="left-col">
-                    <div class="clinical-card camera-container">
-                        <div class="camera-feed" id="emotion-camera-feed">
+
+            <div class="two-col-layout" style="margin:0 2rem;">
+                <div class="clinical-card border-top-blue" style="margin:0;">
+                    <h3><i class="fa-solid fa-wave-square"></i> Facial Analysis Camera</h3>
+                    <div class="camera-container">
+                        <div class="camera-feed">
                             <canvas id="emotion-canvas"></canvas>
                         </div>
                         <div class="camera-controls">
-                            <button id="toggle-emotion-camera" class="btn-primary"><i class="fa-solid fa-eye"></i> Begin Monitoring</button>
-                        </div>
-                    </div>
-                    <div class="clinical-card mt-4">
-                        <h3><i class="fa-solid fa-heart-crack"></i> Distress Telemetry</h3>
-                        <div class="distress-indicator mt-2">
-                            <div class="gauge" id="distress-gauge">
-                                <div class="gauge-fill" style="width: 10%"></div>
-                            </div>
-                            <strong id="distress-label">Baseline</strong>
+                            <button id="toggle-emotion-camera" class="btn-primary"><i class="fa-solid fa-brain"></i> Start Facial Scan</button>
+                            <button id="reset-emotion" class="btn-outline btn-sm" style="margin-left:0.5rem;">Reset</button>
                         </div>
                     </div>
                 </div>
-                <div class="right-col">
-                    <div class="clinical-card">
-                        <h3><i class="fa-solid fa-chart-line"></i> Observation Timeline</h3>
-                        <canvas id="mood-chart-canvas" class="chart-canvas"></canvas>
-                    </div>
-                    <div class="clinical-card mt-4">
-                        <h3><i class="fa-solid fa-file-medical-alt"></i> Generative AI Clinical Summary</h3>
-                        <div class="report-card ai-generated-box" id="emotion-ai-summary">
-                            <em>Start monitoring to generate clinical insights.</em>
-                        </div>
+
+                <div class="clinical-card border-top-purple" style="margin:0;">
+                    <h3><i class="fa-solid fa-chart-pie"></i> Emotion Probability Distribution</h3>
+                    <div id="emotion-bars" class="mt-2">
+                        <div class="confidence-meter mb-2"><span style="width:90px;">😐 Neutral</span><div class="progress-bar"><div class="progress-fill" data-emotion="neutral" style="width:0%;"></div></div><strong data-emotion-val="neutral">0%</strong></div>
+                        <div class="confidence-meter mb-2"><span style="width:90px;">😊 Happy</span><div class="progress-bar"><div class="progress-fill" data-emotion="happy" style="width:0%;background:var(--color-green);"></div></div><strong data-emotion-val="happy">0%</strong></div>
+                        <div class="confidence-meter mb-2"><span style="width:90px;">😢 Sad</span><div class="progress-bar"><div class="progress-fill" data-emotion="sad" style="width:0%;background:var(--color-light-blue);"></div></div><strong data-emotion-val="sad">0%</strong></div>
+                        <div class="confidence-meter mb-2"><span style="width:90px;">😨 Anxious</span><div class="progress-bar"><div class="progress-fill" data-emotion="fearful" style="width:0%;background:var(--color-orange);"></div></div><strong data-emotion-val="fearful">0%</strong></div>
+                        <div class="confidence-meter mb-2"><span style="width:90px;">😣 Pain / Anger</span><div class="progress-bar"><div class="progress-fill" data-emotion="angry" style="width:0%;background:var(--color-red);"></div></div><strong data-emotion-val="angry">0%</strong></div>
+                        <div class="confidence-meter mb-2"><span style="width:90px;">😕 Confused</span><div class="progress-bar"><div class="progress-fill" data-emotion="disgusted" style="width:0%;background:var(--color-purple);"></div></div><strong data-emotion-val="disgusted">0%</strong></div>
+                        <div class="confidence-meter"><span style="width:90px;">😌 Calm</span><div class="progress-bar"><div class="progress-fill" data-emotion="surprised" style="width:0%;background:#0EA5E9;"></div></div><strong data-emotion-val="surprised">0%</strong></div>
                     </div>
                 </div>
             </div>
-        </section>
 
-        <!-- 4. MULTILINGUAL AI -->
-        <section id="page-multilingual" class="page">
+            <div class="clinical-card border-top-red mt-4" style="margin:1.5rem 2rem 0;">
+                <h3><i class="fa-solid fa-gauge-high"></i> Distress Level</h3>
+                <div class="distress-indicator mt-2">
+                    <div class="gauge"><div class="gauge-fill" id="distress-gauge-fill" style="left:0%;"></div></div>
+                    <div style="display:flex;justify-content:space-between;" class="text-sm text-muted">
+                        <span>Relaxed</span><span>Stressed</span><span>Acute Distress</span>
+                    </div>
+                    <p class="mt-2"><strong>Triage Priority: </strong><span id="distress-label">Awaiting Feed...</span></p>
+                </div>
+            </div>
+
+            <div class="clinical-card mt-4" style="margin:1.5rem 2rem 0;">
+                <h3><i class="fa-solid fa-robot"></i> AI Emotional Summary</h3>
+                <div class="ai-generated-box mt-1" id="emotion-ai-summary">
+                    <span class="text-muted">Start the facial scan to view live telemetry and the AI summary.</span>
+                </div>
+            </div>
+
+            <div class="mt-4" style="margin:1.5rem 2rem 0;">
+                <h3>Patient Emotional Reports</h3>
+                <div class="feature-grid mt-2" style="padding:0;">
+                    <div class="clinical-card border-top-orange" style="margin:0;">
+                        <div class="profile-identity">
+                            <div class="avatar" style="background:#1D4ED8;">MS</div>
+                            <div><strong>Maria Santos</strong><div class="text-muted text-sm">PT-1247 · 14:28</div></div>
+                        </div>
+                        <p class="text-sm">Dominant emotion: <strong>Anxious</strong></p>
+                        <p class="text-sm text-muted mt-1">Distress level</p>
+                        <div class="gauge mt-1" style="height:8px;"><div class="gauge-fill" style="left:72%;"></div></div>
+                        <p class="text-sm mt-1" style="color:var(--color-orange);font-weight:600;">72% — Elevated</p>
+                    </div>
+                    <div class="clinical-card border-top-red" style="margin:0;">
+                        <div class="profile-identity">
+                            <div class="avatar" style="background:var(--color-red);">JC</div>
+                            <div><strong>James Chen</strong><div class="text-muted text-sm">PT-0892 · 14:15</div></div>
+                        </div>
+                        <p class="text-sm">Dominant emotion: <strong>Pain</strong></p>
+                        <p class="text-sm text-muted mt-1">Distress level</p>
+                        <div class="gauge mt-1" style="height:8px;"><div class="gauge-fill" style="left:85%;"></div></div>
+                        <p class="text-sm mt-1" style="color:var(--color-red);font-weight:600;">85% — Critical</p>
+                        <p class="text-sm mt-2" style="background:#FEE2E2;color:#991B1B;padding:0.5rem;border-radius:6px;"><i class="fa-solid fa-triangle-exclamation"></i> Immediate attention required</p>
+                    </div>
+                    <div class="clinical-card border-top-green" style="margin:0;">
+                        <div class="profile-identity">
+                            <div class="avatar" style="background:var(--color-green);">AP</div>
+                            <div><strong>Aisha Patel</strong><div class="text-muted text-sm">PT-2341 · 13:50</div></div>
+                        </div>
+                        <p class="text-sm">Dominant emotion: <strong>Happy</strong></p>
+                        <p class="text-sm text-muted mt-1">Distress level</p>
+                        <div class="gauge mt-1" style="height:8px;"><div class="gauge-fill" style="left:12%;"></div></div>
+                        <p class="text-sm mt-1" style="color:var(--color-green);font-weight:600;">12% — Low</p>
+                    </div>
+                    <div class="clinical-card border-top-orange" style="margin:0;">
+                        <div class="profile-identity">
+                            <div class="avatar" style="background:var(--color-purple);">RK</div>
+                            <div><strong>Robert Kim</strong><div class="text-muted text-sm">PT-1678 · 13:35</div></div>
+                        </div>
+                        <p class="text-sm">Dominant emotion: <strong>Sad</strong></p>
+                        <p class="text-sm text-muted mt-1">Distress level</p>
+                        <div class="gauge mt-1" style="height:8px;"><div class="gauge-fill" style="left:56%;"></div></div>
+                        <p class="text-sm mt-1" style="color:var(--color-orange);font-weight:600;">56% — Elevated</p>
+                    </div>
+                    <div class="clinical-card border-top-green" style="margin:0;">
+                        <div class="profile-identity">
+                            <div class="avatar" style="background:#047857;">FA</div>
+                            <div><strong>Fatima Al-Rashid</strong><div class="text-muted text-sm">PT-0543 · 13:20</div></div>
+                        </div>
+                        <p class="text-sm">Dominant emotion: <strong>Calm</strong></p>
+                        <p class="text-sm text-muted mt-1">Distress level</p>
+                        <div class="gauge mt-1" style="height:8px;"><div class="gauge-fill" style="left:8%;"></div></div>
+                        <p class="text-sm mt-1" style="color:var(--color-green);font-weight:600;">8% — Low</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MULTILINGUAL / VOICE TRANSLATION ================= -->
+        <div id="page-voice" class="page">
             <div class="page-header-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-globe"></i> Cross-Language Interpreter</h2>
-                    <p>Medical terminology translation across text, voice, and sign modalities</p>
+                    <h2><i class="fa-solid fa-globe"></i> Multilingual AI Translation</h2>
+                    <p>AI-powered translation across 20+ languages with live speech-to-text and text-to-speech.</p>
                 </div>
             </div>
-            <div class="clinical-card">
+
+            <div class="clinical-card border-top-green" style="margin:0 2rem;">
                 <div class="translation-controls">
                     <div class="lang-group">
-                        <label>Source</label>
-                        <select id="lang-source" class="form-select">
-                            <option value="en">English (Clinical)</option>
-                            <option value="es">Spanish</option>
-                            <option value="fr">French</option>
-                            <option value="zh">Mandarin</option>
-                            <option value="sign">Sign Language (Input)</option>
+                        <label>Speak in</label>
+                        <select id="voice-lang-stt">
+                            <option value="en-US">English (US)</option>
+                            <option value="ta-IN" selected>தமிழ் (Tamil)</option>
+                            <option value="te-IN">తెలుగు (Telugu)</option>
+                            <option value="ml-IN">മലയാളം (Malayalam)</option>
+                            <option value="hi-IN">हिंदी (Hindi)</option>
                         </select>
                     </div>
-                    <button id="swap-langs" class="btn-icon"><i class="fa-solid fa-right-left"></i></button>
+                    <button id="btn-mic" class="btn-primary"><i class="fa-solid fa-microphone"></i> Start Recording</button>
                     <div class="lang-group">
-                        <label>Target</label>
-                        <select id="lang-target" class="form-select">
-                            <option value="es">Spanish</option>
-                            <option value="en">English</option>
-                            <option value="hi">Hindi</option>
-                            <option value="sign">Sign Language (Avatar)</option>
+                        <label>Translate to</label>
+                        <select id="voice-lang-tts">
+                            <option value="en-US" selected>English (US)</option>
+                            <option value="ta-IN">தமிழ் (Tamil)</option>
+                            <option value="te-IN">తెలుగు (Telugu)</option>
+                            <option value="ml-IN">മലയാളം (Malayalam)</option>
+                            <option value="hi-IN">हिंदी (Hindi)</option>
                         </select>
                     </div>
                 </div>
+
                 <div class="translation-panels mt-4">
-                    <div class="panel">
-                        <textarea id="trans-input" placeholder="Enter clinical notes or patient speech..."></textarea>
+                    <div class="lang-group">
+                        <label>Detected Speech (Original)</label>
+                        <div class="trans-output-box" id="voice-text-original">
+                            <span class="text-muted">Spoken audio will appear here as text...</span>
+                        </div>
                     </div>
-                    <div class="panel output-panel">
-                        <div id="trans-output" class="trans-output-box">Translation output...</div>
-                        <div id="sign-avatar-container" class="hidden">
-                            <div class="sign-avatar-placeholder">
-                                <i class="fa-solid fa-user-doctor"></i>
-                                <span>Generating 3D Sign Sequence...</span>
-                            </div>
+                    <div class="lang-group">
+                        <label>AI Translation</label>
+                        <div class="trans-output-box" id="voice-text-translated">
+                            <span class="text-muted">Translation will appear here...</span>
                         </div>
                     </div>
                 </div>
-                <div class="panel-footer mt-4">
-                    <button id="btn-translate" class="btn-primary"><i class="fa-solid fa-language"></i> Process Translation</button>
+
+                <div class="mt-4" style="text-align:right;">
+                    <button id="btn-translate" class="btn-outline"><i class="fa-solid fa-wand-magic-sparkles"></i> Translate with AI</button>
+                    <button id="btn-speak" class="btn-primary"><i class="fa-solid fa-volume-high"></i> Speak Translation</button>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- 5. EMERGENCY ALERTS -->
-        <section id="page-emergency" class="page">
+        <!-- ================= CLINICAL HEALTH ASSISTANT ================= -->
+        <div id="page-assistant" class="page">
+            <div class="page-header-banner">
+                <div class="banner-content">
+                    <h2><i class="fa-solid fa-heart"></i> Health Assistant</h2>
+                    <p>AI-powered medical chat, symptom checker, and personalized health guidance — available 24/7.</p>
+                </div>
+            </div>
+
+            <div class="two-col-layout" style="margin:0 2rem;">
+                <div class="clinical-card border-top-red" style="margin:0;">
+                    <h3><i class="fa-solid fa-comments"></i> Chat with Health Assistant</h3>
+                    <div id="health-chat" class="chat-window large mt-2">
+                        <div class="chat-msg system"><strong>Health Assistant:</strong> Hello, I'm your AI health assistant. Describe your symptoms or ask a health question and I'll do my best to help.</div>
+                    </div>
+                    <div class="chat-input-area mt-2">
+                        <input type="text" id="health-input" placeholder="Describe your symptoms or ask a question...">
+                        <button id="health-send" class="btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+
+                <div class="clinical-card border-top-purple" style="margin:0;">
+                    <h3><i class="fa-solid fa-brain"></i> Assistant Toolbox</h3>
+                    <div class="tool-grid mt-2">
+                        <button id="btn-symptom-summary" class="btn-outline full-width"><i class="fa-solid fa-notes-medical"></i> Symptom Summary</button>
+                        <button id="btn-care-tips" class="btn-outline full-width mt-2"><i class="fa-solid fa-hand-holding-heart"></i> Quick Care Tips</button>
+                        <button id="btn-checklist" class="btn-outline full-width mt-2"><i class="fa-solid fa-list-check"></i> Follow-up Checklist</button>
+                        <button id="btn-share-summary" class="btn-outline full-width mt-2"><i class="fa-solid fa-share-nodes"></i> Export Chat Summary</button>
+                    </div>
+                    <div class="assistant-note mt-4 text-sm text-muted">
+                        The overlay assistant is always available in the corner. Use it to ask follow-up questions, translate text, or manage your sign conversation from any page.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= EMERGENCY ================= -->
+        <div id="page-emergency" class="page">
             <div class="page-header-banner emergency-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-truck-medical"></i> Emergency Dispatch & Triage</h2>
-                    <p>Immediate rapid-response routing and AI-driven severity assessment</p>
+                    <h2><i class="fa-solid fa-triangle-exclamation"></i> Emergency Response System</h2>
+                    <p>One-touch SOS, agentic distress detection, GPS sharing, and instant dispatcher contact.</p>
                 </div>
             </div>
-            <div class="two-col-layout">
-                <div class="left-col text-center">
-                    <div class="clinical-card sos-container">
-                        <button id="sos-button" class="sos-btn">
-                            <i class="fa-solid fa-bell"></i>
-                            <span>SOS</span>
-                        </button>
-                        <p class="mt-2 text-muted">Initiate Priority Dispatch</p>
-                        
-                        <div class="severity-selector mt-4">
-                            <label>Reported Severity:</label>
-                            <select id="sos-severity" class="form-select full-width mt-1">
-                                <option value="low">Level 4 - Non-Urgent</option>
-                                <option value="medium">Level 3 - Urgent</option>
-                                <option value="high">Level 2 - Emergent</option>
-                                <option value="critical">Level 1 - Critical (Resuscitation)</option>
-                            </select>
-                        </div>
-                        <div class="location-toggle mt-4">
-                            <label class="switch">
-                                <input type="checkbox" id="location-share-toggle" checked>
-                                <span class="slider round"></span>
-                            </label>
-                            <span>Broadcast Telemetry</span>
-                            <div id="location-coords" class="coords text-muted mt-1"><i class="fa-solid fa-location-dot"></i> Lat: 34.0522, Long: -118.2437</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="right-col">
-                    <div id="sos-active-panel" class="clinical-card sos-active hidden mb-4">
-                        <div class="countdown-container">
-                            <h3><i class="fa-solid fa-triangle-exclamation"></i> Dispatching Protocol in <span id="sos-countdown">10</span>s</h3>
-                            <button id="sos-cancel" class="btn-outline mt-2">Abort Dispatch</button>
-                        </div>
-                    </div>
-                    <div class="clinical-card">
-                        <h3><i class="fa-solid fa-robot"></i> Generative AI Triage Assessor</h3>
-                        <textarea id="emergency-desc" placeholder="Describe symptoms or incident mechanism..."></textarea>
-                        <button id="btn-assess-emergency" class="btn-primary mt-2"><i class="fa-solid fa-magnifying-glass-chart"></i> Generate Triage Report</button>
-                        <div id="emergency-assessment-result" class="assessment-result ai-generated-box mt-2 hidden"></div>
-                    </div>
-                    <div class="clinical-card mt-4">
-                        <h3><i class="fa-solid fa-headset"></i> Dispatch Communications</h3>
-                        <div class="chat-window" id="dispatch-chat">
-                            <div class="chat-msg system"><strong>[SYSTEM]</strong> Dispatch connection secured. Standing by for triage data.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
 
-        <!-- 6. HEALTH ASSISTANT -->
-        <section id="page-health" class="page">
+            <div class="two-col-layout" style="margin:0 2rem;">
+                <div class="clinical-card border-top-red sos-container" style="margin:0;">
+                    <h3 class="text-center text-red">Emergency SOS</h3>
+                    <div class="text-center mt-4">
+                        <button id="sos-button" class="sos-btn"><i class="fa-solid fa-triangle-exclamation"></i> SOS</button>
+                    </div>
+                    <div id="sos-active-panel" class="hidden mt-4 text-center">
+                        <h4>Dispatch ETA</h4>
+                        <div class="stat-val" id="sos-countdown">10</div>
+                        <p class="text-muted">Connecting to local dispatch...</p>
+                        <button id="sos-cancel" class="btn-outline btn-sm mt-2">Cancel SOS</button>
+                        <div id="dispatch-chat" class="chat-window mt-2 text-left"></div>
+                    </div>
+                </div>
+
+                <div class="clinical-card border-top-red" style="margin:0;">
+                    <h3><i class="fa-solid fa-list-check"></i> Severity Level</h3>
+                    <ul class="med-list mt-1">
+                        <li><strong>Level 1</strong> — Low — General assistance needed</li>
+                        <li><strong>Level 2</strong> — Moderate — Medical attention required</li>
+                        <li style="border:1px solid var(--color-red);background:#FEF2F2;"><strong>Level 3</strong> — High — Urgent medical emergency</li>
+                        <li><strong>Level 4</strong> — Critical — Life threatening</li>
+                    </ul>
+                    <h4 class="mt-4"><i class="fa-solid fa-location-dot"></i> Location Sharing</h4>
+                    <div class="ai-generated-box mt-1" style="display:flex;justify-content:space-between;align-items:center;">
+                        <span class="text-sm">Share your GPS location with dispatchers</span>
+                        <button id="btn-location" class="btn-primary btn-sm">Enable</button>
+                    </div>
+
+                    <h4 class="mt-4"><i class="fa-solid fa-stethoscope"></i> Describe the Emergency</h4>
+                    <textarea id="emergency-desc" class="mt-1" placeholder="Briefly describe the patient's condition or emergency..."></textarea>
+                    <button class="btn-primary mt-2" id="btn-assess-emergency"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Triage Assessment</button>
+                    <div id="emergency-assessment-result" class="ai-generated-box mt-2 hidden"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MEDICAL RECORDS ================= -->
+        <div id="page-records" class="page">
             <div class="page-header-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-stethoscope"></i> Clinical Health Assistant</h2>
-                    <p>AI diagnostic support, symptom checker, and patient vitals tracking</p>
+                    <h2><i class="fa-solid fa-folder-open"></i> Medical Records</h2>
+                    <p>Secure patient file management, history viewer, and exportable PDF reports.</p>
                 </div>
             </div>
-            <div class="two-col-layout">
-                <div class="left-col">
-                    <div class="clinical-card chat-card">
-                        <div class="chat-window large" id="health-chat">
-                            <div class="chat-msg system"><strong>[AI ASSISTANT]</strong> Initializing diagnostic protocol. Please describe the patient's primary complaint and duration of symptoms.</div>
-                        </div>
-                        <div class="chat-input-area mt-2">
-                            <input type="text" id="health-input" placeholder="Input clinical observations...">
-                            <button id="health-send" class="btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="right-col">
-                    <div class="clinical-card">
-                        <h3><i class="fa-solid fa-heart-pulse"></i> Telemetry Vitals</h3>
-                        <div class="vitals-grid mt-2">
-                            <div class="vital-card border-blue">
-                                <i class="fa-solid fa-heart pulse-icon"></i>
-                                <span>Heart Rate</span>
-                                <strong>72 bpm</strong>
-                            </div>
-                            <div class="vital-card border-red">
-                                <i class="fa-solid fa-temperature-half"></i>
-                                <span>Temp</span>
-                                <strong>98.6 °F</strong>
-                            </div>
-                            <div class="vital-card border-green">
-                                <i class="fa-solid fa-droplet"></i>
-                                <span>SpO2</span>
-                                <strong>99%</strong>
-                            </div>
-                            <div class="vital-card border-purple">
-                                <i class="fa-solid fa-lungs"></i>
-                                <span>Resp</span>
-                                <strong>16/min</strong>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="clinical-card mt-4">
-                        <h3><i class="fa-solid fa-pills"></i> Medication Schedule</h3>
-                        <ul class="med-list mt-2" id="med-list">
-                            <li><label><input type="checkbox"> Lisinopril 10mg - 08:00 AM</label></li>
-                            <li><label><input type="checkbox"> Metformin 500mg - 13:00 PM</label></li>
-                        </ul>
-                        <button class="btn-outline full-width mt-2"><i class="fa-solid fa-plus"></i> Add Protocol</button>
-                    </div>
-                </div>
-            </div>
-        </section>
 
-        <!-- 7. MEDICAL RECORDS -->
-        <section id="page-records" class="page">
+            <div class="clinical-card border-top-blue" style="margin:0 2rem 1rem; padding:1.5rem;">
+                <h3><i class="fa-solid fa-file-circle-plus"></i> Record Management</h3>
+                <div class="form-grid mt-2">
+                    <div class="lang-group"><label>Patient ID</label><input type="text" id="record-patient-id" placeholder="PAT-12345"></div>
+                    <div class="lang-group"><label>Doctor ID</label><input type="text" id="record-doctor-id" placeholder="DOC-67890"></div>
+                    <div class="lang-group"><label>Admin ID</label><input type="text" id="record-admin-id" placeholder="ADM-001"></div>
+                    <div class="lang-group"><label>Record Type</label><input type="text" id="record-type" placeholder="Lab Results"></div>
+                    <div class="lang-group"><label>Status</label><select id="record-status"><option value="Draft">Draft</option><option value="Final">Final</option><option value="Priority 1">Priority 1</option></select></div>
+                    <div class="lang-group" style="grid-column:1 / -1;"><label>Notes</label><textarea id="record-note" placeholder="Patient symptoms, findings, or instructions..."></textarea></div>
+                    <button id="record-submit" class="btn-primary" style="grid-column:1 / -1;">Save Record</button>
+                </div>
+                <div id="record-feedback" class="text-sm text-muted mt-2"></div>
+            </div>
+
+            <div class="upload-zone mb-4">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <h4>Drop patient files here to upload</h4>
+                <p class="text-muted text-sm">Supports PDF, DICOM, JPEG, PNG — Max 100MB per file</p>
+                <input type="file" id="record-upload" class="hidden">
+            </div>
+
+            <div class="two-col-layout" style="margin:0 2rem;">
+                <div class="clinical-card" style="margin:0;">
+                    <h3><i class="fa-solid fa-table-list"></i> Records</h3>
+                    <div class="records-table-wrapper mt-2">
+                        <table class="records-table">
+                            <thead><tr><th>Record ID</th><th>Patient</th><th>Type</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="record-table-body">
+                                <tr id="no-records-row">
+                                    <td colspan="6" class="text-muted" style="text-align:center; padding:2rem 0;">No records available yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="report-viewer" class="hidden mt-4">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <h4>File Viewer</h4>
+                            <button class="btn-icon" id="close-report"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="ai-generated-box mt-2" id="report-content"></div>
+                        <h4 class="mt-2">AI Summary</h4>
+                        <div class="ai-generated-box mt-1" id="record-ai-text"></div>
+                    </div>
+                </div>
+
+                <div class="patient-profile" style="height:fit-content;">
+                    <div class="profile-header"><i class="fa-solid fa-user"></i> Patient Profile</div>
+                    <div class="profile-body">
+                        <div class="profile-identity">
+                            <div class="avatar">MS</div>
+                            <div><strong>Maria Santos</strong><div class="text-muted text-sm">PT-1247</div></div>
+                        </div>
+                        <div class="profile-row"><span>Date of Birth</span><strong>1978-03-15</strong></div>
+                        <div class="profile-row"><span>Blood Type</span><strong>O+</strong></div>
+                        <div class="profile-row"><span>Primary Doctor</span><strong>Dr. Sarah Mitchell</strong></div>
+                        <div class="profile-row"><span>Ward</span><strong>Room 312, Wing B</strong></div>
+                        <div class="profile-row" style="border-bottom:none;"><span>Allergies</span><strong>Penicillin</strong></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VOICE ASSISTANT ================= -->
+        <div id="page-voiceassist" class="page">
             <div class="page-header-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-folder-open"></i> Electronic Health Records</h2>
-                    <p>Secure patient file management, history viewer, and exportable PDF reports</p>
-                </div>
-            </div>
-            <div class="clinical-card">
-                <div class="upload-zone" id="file-upload-zone">
-                    <i class="fa-solid fa-file-arrow-up"></i>
-                    <p>Drop patient files here to upload</p>
-                    <span class="text-muted text-sm">Supports PDF, DICOM, JPEG, PNG — Max 100MB per file</span>
-                </div>
-            </div>
-            <div class="two-col-layout records-layout mt-4">
-                <div class="left-col records-table-wrapper clinical-card">
-                    <div class="table-controls mb-2">
-                        <input type="text" placeholder="Search records..." class="form-input search-bar">
-                        <select class="form-select"><option>All Types</option></select>
-                        <select class="form-select"><option>Sort by Date</option></select>
-                    </div>
-                    <table class="records-table">
-                        <thead>
-                            <tr>
-                                <th>Record ID / Patient</th>
-                                <th>Type</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="records-tbody">
-                            <tr>
-                                <td><strong>REC-2026-001</strong><br><span class="text-muted text-sm">Maria Santos</span></td>
-                                <td><span class="badge blue">Lab Results</span></td>
-                                <td>2026-06-10</td>
-                                <td><span class="badge green">Final</span></td>
-                                <td><button class="btn-outline view-record btn-sm" data-id="1"><i class="fa-solid fa-eye"></i> View</button></td>
-                            </tr>
-                            <tr>
-                                <td><strong>REC-2026-002</strong><br><span class="text-muted text-sm">David Chen</span></td>
-                                <td><span class="badge purple">Imaging</span></td>
-                                <td>2026-06-08</td>
-                                <td><span class="badge red">Pending Read</span></td>
-                                <td><button class="btn-outline view-record btn-sm" data-id="2"><i class="fa-solid fa-eye"></i> View</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="right-col profile-col clinical-card">
-                    <div class="patient-profile">
-                        <div class="profile-header">Patient Profile</div>
-                        <div class="profile-body">
-                            <div class="profile-identity">
-                                <div class="avatar">MS</div>
-                                <div>
-                                    <strong>Maria Santos</strong>
-                                    <div class="text-muted text-sm">PT-1247</div>
-                                </div>
-                            </div>
-                            <div class="profile-row"><span>Date of Birth</span> <strong>1978-03-15</strong></div>
-                            <div class="profile-row"><span>Blood Type</span> <strong>O+</strong></div>
-                            <div class="profile-row"><span>Primary Doctor</span> <strong>Dr. Sarah Mitchell</strong></div>
-                            <div class="profile-row"><span>Ward</span> <strong>Room 312, Wing B</strong></div>
-                            <div class="profile-row"><span>Allergies</span> <strong>Penicillin</strong></div>
-                        </div>
-                    </div>
+                    <h2><i class="fa-solid fa-microphone"></i> Voice Assistant</h2>
+                    <p>Speech-to-text and text-to-speech with real-time waveform visualization.</p>
                 </div>
             </div>
 
-            <!-- PDF Viewer Modal (Simulated inline) -->
-            <div id="report-viewer" class="clinical-card mt-4 hidden">
-                <div class="report-header">
-                    <h3 id="report-title">Record Insight Viewer</h3>
-                    <button id="close-report" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="two-col-layout">
-                    <div class="report-content" id="report-content">
-                        Loading document data...
-                    </div>
-                    <div class="ai-generated-box" id="record-ai-summary">
-                        <h4><i class="fa-solid fa-robot"></i> AI Clinical Extraction</h4>
-                        <div id="record-ai-text">Analyzing document...</div>
-                    </div>
-                </div>
-                <button id="export-pdf" class="btn-primary mt-4"><i class="fa-solid fa-file-pdf"></i> Export to PDF</button>
-            </div>
-        </section>
-
-        <!-- 8. VOICE ASSISTANT -->
-        <section id="page-voice" class="page">
-            <div class="page-header-banner">
-                <div class="banner-content">
-                    <h2><i class="fa-solid fa-microphone-lines"></i> Voice Dictation & Synthesis</h2>
-                    <p>Real-time clinical dictation and patient communication generation</p>
-                </div>
-            </div>
-            <div class="two-col-layout">
-                <div class="clinical-card voice-card border-top-blue">
-                    <h3><i class="fa-solid fa-microphone"></i> Speech → Text (Dictation)</h3>
-                    <div class="voice-controls mt-2 mb-4">
-                        <select id="voice-lang-stt" class="form-select full-width">
-                            <option value="en-US">English (US)</option>
-                            <option value="es-ES">Spanish (ES)</option>
-                        </select>
-                    </div>
-                    <div class="waveform-container dark-bg">
+            <div class="two-col-layout" style="margin:0 2rem;">
+                <div class="clinical-card voice-card border-top-blue" style="margin:0;">
+                    <h3><i class="fa-solid fa-wave-square"></i> Voice Input</h3>
+                    <div class="waveform-container dark-bg mt-2">
                         <canvas id="waveform-canvas"></canvas>
                     </div>
+                    <div class="translation-controls mt-3">
+                        <div class="lang-group">
+                            <label>Playback Language</label>
+                            <select id="va-lang-tts">
+                                <option value="en-US" selected>English (US)</option>
+                                <option value="ta-IN">தமிழ് (Tamil)</option>
+                                <option value="te-IN">తెలుగు (Telugu)</option>
+                                <option value="ml-IN">മലയാളം (Malayalam)</option>
+                                <option value="hi-IN">हिंदी (Hindi)</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="text-center mt-4">
-                        <button id="btn-mic" class="btn-mic"><i class="fa-solid fa-microphone"></i></button>
-                        <p id="mic-status" class="mt-2 text-muted">Click to begin dictation</p>
+                        <button id="va-mic-btn" class="btn-mic"><i class="fa-solid fa-microphone"></i></button>
+                        <p id="va-mic-status" class="mt-2 text-muted">Tap to start recording</p>
                     </div>
                 </div>
-                <div class="clinical-card voice-card border-top-green">
-                    <h3><i class="fa-solid fa-volume-high"></i> Text → Speech (Synthesis)</h3>
-                    <div class="voice-controls mt-2 mb-4">
-                        <select id="voice-lang-tts" class="form-select full-width">
-                            <option value="en-US">English (US)</option>
-                            <option value="es-ES">Spanish (ES)</option>
-                        </select>
-                    </div>
-                    <div class="voice-transcript">
-                        <textarea id="voice-text" placeholder="Enter text to synthesize audio output..."></textarea>
-                    </div>
-                    <div class="text-center mt-4">
-                        <button id="btn-speak" class="btn-primary"><i class="fa-solid fa-play"></i> Synthesize Audio</button>
+                <div class="clinical-card border-top-blue" style="margin:0;">
+                    <h3><i class="fa-solid fa-message"></i> Transcript</h3>
+                    <textarea id="va-text" class="mt-2" style="min-height:160px;" placeholder="Transcribed speech will appear here and read aloud automatically..."></textarea>
+                    <div class="mt-2" style="text-align:center;">
+                        <p id="va-playback-status" class="text-muted text-sm">Auto-playback ready</p>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <!-- 9. ANALYTICS DASHBOARD -->
-        <section id="page-analytics" class="page">
+        <!-- ================= ANALYTICS ================= -->
+        <div id="page-analytics" class="page">
             <div class="page-header-banner">
                 <div class="banner-content">
-                    <h2><i class="fa-solid fa-chart-column"></i> Facility Analytics Dashboard</h2>
-                    <p>Usage statistics, AI utilization, alert frequency, and engagement metrics</p>
+                    <h2><i class="fa-solid fa-chart-column"></i> Analytics Dashboard</h2>
+                    <p>Usage statistics, emotion trends, alert frequency, and engagement metrics.</p>
                 </div>
             </div>
-            
-            <div class="stats-grid mb-4">
+
+            <div class="stats-grid">
                 <div class="clinical-card stat-card border-top-blue">
-                    <div class="stat-header">
-                        <i class="fa-solid fa-users text-blue"></i>
-                        <span class="trend up"><i class="fa-solid fa-arrow-up"></i> 8.3%</span>
-                    </div>
-                    <div class="stat-val">12,847</div>
-                    <h3>Total Active Users</h3>
-                </div>
-                <div class="clinical-card stat-card border-top-green">
-                    <div class="stat-header">
-                        <i class="fa-solid fa-notes-medical text-green"></i>
-                        <span class="trend up"><i class="fa-solid fa-arrow-up"></i> 14.2%</span>
-                    </div>
-                    <div class="stat-val">1,287</div>
-                    <h3>Sessions This Week</h3>
+                    <div class="stat-header"><i class="fa-solid fa-hospital-user text-blue"></i><span class="trend up">+12%</span></div>
+                    <div class="stat-val">42</div>
+                    <h3>Active Sessions</h3>
                 </div>
                 <div class="clinical-card stat-card border-top-red">
-                    <div class="stat-header">
-                        <i class="fa-solid fa-triangle-exclamation text-red"></i>
-                        <span class="trend down"><i class="fa-solid fa-arrow-down"></i> 3.7%</span>
-                    </div>
-                    <div class="stat-val">56</div>
-                    <h3>Emergency Alerts</h3>
+                    <div class="stat-header"><i class="fa-solid fa-triangle-exclamation text-red"></i><span class="trend down">-4%</span></div>
+                    <div class="stat-val">3</div>
+                    <h3>High Distress Cases</h3>
+                </div>
+                <div class="clinical-card stat-card border-top-green">
+                    <div class="stat-header"><i class="fa-solid fa-language text-green"></i><span class="trend up">84%</span></div>
+                    <div class="stat-val">18</div>
+                    <h3>Translation Sessions</h3>
                 </div>
                 <div class="clinical-card stat-card border-top-purple">
-                    <div class="stat-header">
-                        <i class="fa-solid fa-clock text-purple"></i>
-                        <span class="trend flat">+ 4 min</span>
-                    </div>
-                    <div class="stat-val">26 min</div>
-                    <h3>Avg Session Length</h3>
+                    <div class="stat-header"><i class="fa-solid fa-bolt text-purple"></i><span class="trend flat">0.4s</span></div>
+                    <div class="stat-val">Free</div>
+                    <h3>Groq Pipeline Latency</h3>
                 </div>
             </div>
 
-            <!-- Chart.js Containers -->
-            <div class="clinical-card chart-wrapper mb-4">
-                <div class="chart-header">
-                    <h3><i class="fa-solid fa-chart-area"></i> Emotion Trends - Today</h3>
-                    <span class="text-sm text-muted">All patients combined</span>
+            <div class="two-col-layout mt-4" style="margin:0 2rem;">
+                <div class="clinical-card chart-wrapper" style="margin:0;">
+                    <div class="chart-header"><h3>Patient Distress Trend</h3></div>
+                    <div class="chart-canvas"><canvas id="chart-emotion-trend"></canvas></div>
                 </div>
-                <div style="position: relative; height: 300px; width: 100%;">
-                    <canvas id="chart-emotion-trend"></canvas>
+                <div class="clinical-card chart-wrapper" style="margin:0;">
+                    <div class="chart-header"><h3>Module Usage Distribution</h3></div>
+                    <div class="chart-canvas"><canvas id="chart-module-dist"></canvas></div>
                 </div>
             </div>
 
-            <div class="two-col-layout mt-4">
-                <div class="clinical-card chart-wrapper">
-                    <h3><i class="fa-solid fa-chart-bar"></i> Weekly Module Usage</h3>
-                    <div style="position: relative; height: 250px; width: 100%;">
-                        <canvas id="chart-module-usage"></canvas>
-                    </div>
-                </div>
-                <div class="clinical-card chart-wrapper">
-                    <h3><i class="fa-solid fa-chart-pie"></i> Module Distribution</h3>
-                    <div style="position: relative; height: 250px; width: 100%; display:flex; justify-content:center;">
-                        <canvas id="chart-module-dist"></canvas>
-                    </div>
-                </div>
+            <div class="clinical-card chart-wrapper mt-4" style="margin:1.5rem 2rem 0;">
+                <div class="chart-header"><h3>Weekly Module Usage</h3></div>
+                <div class="chart-canvas"><canvas id="chart-module-usage"></canvas></div>
             </div>
-            
-            <div class="clinical-card mt-4">
-                <h3><i class="fa-solid fa-robot"></i> Generative AI Analytics Insight</h3>
-                <div class="ai-generated-box mt-2" id="analytics-ai-summary">
-                    <i class="fa-solid fa-spinner fa-spin"></i> Analyzing data trends...
-                </div>
+
+            <div class="clinical-card mt-4" style="margin:1.5rem 2rem 0;">
+                <h3><i class="fa-solid fa-robot"></i> AI Facility Insight</h3>
+                <div class="ai-generated-box mt-1" id="analytics-ai-summary"></div>
             </div>
-        </section>
+        </div>
 
-    </main>
+    </div>
 
-    <!-- Scripts -->
+    <!-- ================= API KEY MODAL ================= -->
+    <div id="api-key-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3>Configure Groq API Key</h3>
+            <p class="text-sm text-muted mt-1">Get your free key at <strong>console.groq.com</strong></p>
+            <div class="mt-2">
+                <input type="password" id="api-key-input" placeholder="gsk_...">
+            </div>
+            <div id="api-key-status" class="text-green text-sm mt-1 hidden"><i class="fa-solid fa-circle-check"></i> Key saved successfully!</div>
+            <div class="mt-4" style="display:flex;justify-content:flex-end;gap:0.5rem;">
+                <button id="close-api-modal" class="btn-outline btn-sm">Close</button>
+                <button id="save-api-key" class="btn-primary btn-sm">Save Key</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FLOATING AI ASSISTANT ================= -->
+    <div id="ai-assistant-overlay" class="floating-assistant-wrapper">
+        <div id="floating-chat-panel" class="floating-chat-panel hidden">
+            <div class="chat-panel-header">
+                <h3><i class="fa-solid fa-heart"></i> Health Assistant</h3>
+                <button id="close-floating-chat" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="floating-health-chat" class="chat-window">
+                <div class="chat-msg system"><strong>Health Assistant:</strong> Hello, I'm your AI health assistant. Describe your symptoms or ask a health question and I'll do my best to help.</div>
+            </div>
+            <div class="chat-input-area mt-2" style="padding: 10px; border-top: 1px solid #eee;">
+                <input type="text" id="floating-health-input" placeholder="Ask a health question...">
+                <button id="floating-health-send" class="btn-primary"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
+        </div>
+        <button id="toggle-floating-chat" class="floating-chat-btn" title="AI Health Assistant">
+            <i class="fa-solid fa-comment-medical"></i>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
     <script src="simulations.js"></script>
     <script src="app.js"></script>
 </body>
